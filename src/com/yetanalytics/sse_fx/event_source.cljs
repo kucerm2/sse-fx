@@ -22,6 +22,7 @@
   [{:keys [uri
            on-open
            on-message
+           handlers
            on-error
            config
            decode-msg-fn]
@@ -58,6 +59,20 @@
                                :context ::message
                                :handler-fn on-message}
                               err))))))
+    (for [[event-name handler] handlers]
+      (.addEventListener es
+                         event-name
+                         (fn [e]
+                           (try (handler (cond-> e
+                                                decode-msg-fn
+                                                decode-msg-fn))
+                               (catch js/Error err
+                                 (on-error (event-source-error
+                                             {:event-source es
+                                              :event        e
+                                              :context      event-name
+                                              :handler-fn   handler}
+                                             err)))))))
     (set! (.-onerror es)
           (fn [e]
             (on-error
