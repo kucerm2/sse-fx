@@ -22,7 +22,7 @@
   [{:keys [uri
            on-open
            on-message
-           handlers
+           on-event
            on-error
            config
            decode-msg-fn]
@@ -59,7 +59,7 @@
                                :context ::message
                                :handler-fn on-message}
                               err))))))
-    (for [[event-name handler] handlers]
+    (for [[event-name handler] on-event]
       (.addEventListener es
                          event-name
                          (fn [e]
@@ -112,6 +112,8 @@
            handle-open
            handle-message
            handle-error
+           ;; custom events handlers
+           handlers
            ;; A special handler that will be stored and called
            ;; if close fx is fired
            handle-close
@@ -141,8 +143,17 @@
                   :on-error
                   #(re-frame/dispatch
                     (conj handle-error
-                          key %))))
-               event-source-args))]
+                          key %)))
+                  handlers
+                  (assoc
+                   :on-event
+                   (for [[event handler] handlers]
+                     [event
+                      (fn [message]
+                        (re-frame/dispatch
+                          (conj handler
+                                key message)))])))
+             event-source-args))]
       (swap! event-sources
              assoc
              key
