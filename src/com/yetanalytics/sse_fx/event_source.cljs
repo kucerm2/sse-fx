@@ -59,7 +59,7 @@
                                :context ::message
                                :handler-fn on-message}
                               err))))))
-    (for [[event-name handler] on-event]
+    (doseq [[event-name handler] on-event]
       (.addEventListener es
                          event-name
                          (fn [e]
